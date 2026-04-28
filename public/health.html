@@ -1,0 +1,43 @@
+﻿
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>健康档案管理</title>
+    <style>
+        body{padding:30px;}
+        .box{background:#fff;padding:20px;border-radius:8px;margin-bottom:20px;}
+        input,textarea{width:98%;padding:10px;margin:8px 0;border:1px #ccc solid;border-radius:4px;}
+        button{padding:10px 20px;background:#27ae60;border:none;color:#fff;border-radius:4px;}
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3>快速调取会员健康档案</h3>
+        <input type="text" id="member_id" placeholder="输入会员ID">
+        <button onclick="getHealth()">查询档案</button>
+    </div>
+
+    <div class="box" id="showData"></div>
+
+    <script>
+    //调取健康、活动、治疗、用药全部记录
+    function getHealth(){
+        let mid = document.getElementById('member_id').value;
+        fetch("/app/controller/Health.php?member_id="+mid)
+        .then(res=>res.json()).then(data=>{
+            let html = "";
+            html += "<h4>会员健康基础档案</h4>";
+            html += JSON.stringify(data.archive,null,2)+"<hr>";
+            html += "<h4>日常活动记录</h4>";
+            html += JSON.stringify(data.activity,null,2)+"<hr>";
+            html += "<h4>康养治疗方案</h4>";
+            html += JSON.stringify(data.treat,null,2)+"<hr>";
+            html += "<h4>用药记录</h4>";
+            html += JSON.stringify(data.drug,null,2);
+            document.getElementById('showData').innerHTML = html;
+        })
+    }
+    </script>
+</body>
+</html>

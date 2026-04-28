@@ -1,0 +1,50 @@
+﻿html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>住房餐饮 & 酒店系统对接</title>
+    <style>
+        body{padding:30px;}
+        .box{background:#fff;padding:20px;border-radius:8px;margin:15px 0;}
+        button{padding:10px;background:#27ae60;color:#fff;border:none;border-radius:4px;}
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3>全部康养房源（同步酒店）</h3>
+        <div id="roomList"></div>
+        <button onclick="getRoom()">刷新房源</button>
+    </div>
+
+    <div class="box">
+        <h3>酒店账单自动对账</h3>
+        <input placeholder="输入酒店订单号" id="orderNo">
+        <button onclick="hotelCheck()">开始对账</button>
+        <div id="hotelRes"></div>
+    </div>
+
+<script>
+//获取房源
+function getRoom(){
+    fetch("/app/controller/RoomFood.php/roomList")
+    .then(res=>res.json()).then(d=>{
+        document.getElementById('roomList').innerHTML = JSON.stringify(d,null,2);
+    })
+}
+
+//酒店财务对账
+function hotelCheck(){
+    let no = document.getElementById('orderNo').value;
+    fetch("/app/controller/HotelSync.php/checkSync?order_no="+no)
+    .then(res=>res.json()).then(d=>{
+        document.getElementById('hotelRes').innerHTML = JSON.stringify(d.data,null,2);
+        alert("酒店对账完成！")
+    })
+}
+
+//默认加载房源
+getRoom();
+</script>
+</body>
+</html>
