@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>缴费与银行保证金托管</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body{padding:30px;}
+        .box{background:#fff;padding:20px;border-radius:8px;margin:15px 0;}
+        button{padding:10px 18px;background:#2980b9;color:#fff;border:none;border-radius:4px;margin:5px;}
+        #auth-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#f1f3f6;color:#555;font-size:16px;}
+        #auth-loading.hidden{display:none;}
+        #app-root{display:none;}
+        #app-root.ready{display:block;}
+    </style>
+</head>
+<body>
+    <div id="auth-loading">正在验证登录状态 …</div>
+
+    <div id="app-root">
+        <div class="box">
+            <h3>会员ID查询</h3>
+            <input type="text" id="mid" placeholder="填写会员ID">
+            <button onclick="getBond()">查看保证金</button>
+            <button onclick="syncBank()">银行托管一键对账</button>
+            <div id="bondBox"></div>
+        </div>
+
+        <div class="box">
+            <h3>银行同步流水</h3>
+            <div id="bankLog"></div>
+        </div>
+    </div>
+
+<script>
+    const SUPABASE_URL = 'https://txvyplfaaisrzbwpoqcd.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_ZgDcY0b1NGjf1iEArms2Dw_GMDlIOU5';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function checkAuth() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) { window.location.href = 'login.html'; return; }
+        document.getElementById('auth-loading').classList.add('hidden');
+        document.getElementById('app-root').classList.add('ready');
+    }
+    supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') window.location.href = 'login.html';
+    });
+    checkAuth();
+
+let mid = "";
+function getBond(){
+    mid = document.getElementById('mid').value;
+    fetch("/app/controller/Finance.php?member_id="+mid)
+    .then(res=>res.json()).then(d=>{
+        document.getElementById('bondBox').innerHTML = `
+        <p>保证金总额：${d.bond_total}</p>
+        <p>可用余额：${d.bond_balance}</p>
+        <p>冻结金额：${d.bond_freeze}</p>
+        <p>银行同步状态：${d.sync_bank_status==1?"已同步":"未同步"}
+        `;
+    })
+}
+
+//银行对接对账
+function syncBank(){
+    fetch("/app/controller/BankSync.php?member_id="+mid)
+    .then(res=>res.json()).then(d=>{
+        alert(d.msg+"\n银行真实余额："+d.bank_balance);
+        getBankLog();
+    })
+}
+
+//银行流水
+function getBankLog(){
+    fetch("/app/controller/BankSync.php/syncLog?member_id="+mid)
+    .then(res=>res.json()).then(d=>{
+        document.getElementById('bankLog').innerHTML = JSON.stringify(d,null,2);
+    })
+}
+</script>
+</body>
+</html>

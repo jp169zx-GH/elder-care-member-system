@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>健康档案管理</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body{padding:30px;}
+        .box{background:#fff;padding:20px;border-radius:8px;margin-bottom:20px;}
+        input,textarea{width:98%;padding:10px;margin:8px 0;border:1px #ccc solid;border-radius:4px;}
+        button{padding:10px 20px;background:#27ae60;border:none;color:#fff;border-radius:4px;}
+        #auth-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#f1f3f6;color:#555;font-size:16px;}
+        #auth-loading.hidden{display:none;}
+        #app-root{display:none;}
+        #app-root.ready{display:block;}
+    </style>
+</head>
+<body>
+    <div id="auth-loading">正在验证登录状态 …</div>
+
+    <div id="app-root">
+        <div class="box">
+            <h3>快速调取会员健康档案</h3>
+            <input type="text" id="member_id" placeholder="输入会员ID">
+            <button onclick="getHealth()">查询档案</button>
+        </div>
+
+        <div class="box" id="showData"></div>
+    </div>
+
+    <script>
+    const SUPABASE_URL = 'https://txvyplfaaisrzbwpoqcd.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_ZgDcY0b1NGjf1iEArms2Dw_GMDlIOU5';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function checkAuth() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) { window.location.href = 'login.html'; return; }
+        document.getElementById('auth-loading').classList.add('hidden');
+        document.getElementById('app-root').classList.add('ready');
+    }
+    supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') window.location.href = 'login.html';
+    });
+    checkAuth();
+
+    //调取健康、活动、治疗、用药全部记录
+    function getHealth(){
+        let mid = document.getElementById('member_id').value;
+        fetch("/app/controller/Health.php?member_id="+mid)
+        .then(res=>res.json()).then(data=>{
+            let html = "";
+            html += "<h4>会员健康基础档案</h4>";
+            html += JSON.stringify(data.archive,null,2)+"<hr>";
+            html += "<h4>日常活动记录</h4>";
+            html += JSON.stringify(data.activity,null,2)+"<hr>";
+            html += "<h4>康养治疗方案</h4>";
+            html += JSON.stringify(data.treat,null,2)+"<hr>";
+            html += "<h4>用药记录</h4>";
+            html += JSON.stringify(data.drug,null,2);
+            document.getElementById('showData').innerHTML = html;
+        })
+    }
+    </script>
+</body>
+</html>
